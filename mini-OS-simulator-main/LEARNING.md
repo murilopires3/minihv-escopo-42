@@ -1,88 +1,96 @@
-# Why C++? — Benefits, Features, and What This Project Teaches
+# Por que C++? ? Benef?cios, recursos e o que este projeto ensina
 
-This document explains why C++ was chosen for the Mini OS Simulator, which language features proved most useful, how threading and concurrency are used, and what you learn (both OS concepts and programming skills) by building or studying this project.
-
----
-
-## 1. Why C++ for This Project (and Similar Systems/OS Projects)
-
-### 1.1 Direct Mapping to OS Concepts
-
-Operating systems courses describe **processes**, **threads**, **mutexes**, **semaphores**, and **schedulers**. In C++, you have first-class counterparts:
-
-| OS concept        | C++ standard library              | How we use it in the simulator                    |
-|------------------|------------------------------------|---------------------------------------------------|
-| Thread           | `std::thread`                      | Module 3: real concurrent threads for sync demos  |
-| Mutex            | `std::mutex`                       | Protecting shared buffer, logger, RAG state       |
-| Condition var    | `std::condition_variable`          | Semaphore and “wait until resource” semantics     |
-| Atomic operations| `std::atomic<T>`                   | Producer/consumer item counters without locks     |
-
-Using the same primitives that real OSes expose (or wrap) makes the mental model consistent: what you simulate (e.g. “thread blocks on semaphore”) is what actually happens in the program. A language without native threads or mutexes would require a different, more abstract model and would teach concurrency less directly.
-
-### 1.2 No Hidden Runtime or Garbage Collector
-
-The simulator is a **single executable** with no interpreter or VM. There is no garbage collector, so:
-
-- **Determinism:** When you run a scheduling or page-replacement algorithm, behavior is repeatable; no GC pauses.
-- **Resource control:** You can reason about when memory is allocated and freed (e.g. virtual disk blocks, process lists). This aligns with OS topics like memory management and allocation policies.
-- **Portability:** The same binary runs on any platform with a C++17 toolchain; no extra runtime to ship.
-
-For projects that emulate kernels, schedulers, or allocators, this predictability and control are strong advantages.
-
-### 1.3 Performance Where It Matters
-
-We do not need maximum speed for a teaching simulator, but C++ still helps:
-
-- **Concurrency (Module 3):** Real `std::thread`s run in parallel on multi-core machines. You can observe interleaving and timing without faking it.
-- **No per-operation overhead:** Tight loops (e.g. Banker’s algorithm, page replacement, disk scheduling) run with minimal overhead, so even large inputs stay responsive.
-- **Data layout:** Structs like `ProcessControlBlock` and `DirEntry` have predictable layout; useful when you later read about cache effects or when implementing something closer to a real kernel.
-
-### 1.4 Rich Standard Library Without External Dependencies
-
-The project uses **only the C++ standard library**:
-
-- **Containers:** `std::vector`, `std::queue`, `std::map`, `std::set`, `std::list` for processes, ready queues, page frames, FAT, directory entries, and graph structures.
-- **Algorithms:** `std::sort`, `std::min`, `std::max` for scheduling and replacement policies.
-- **I/O:** `std::fstream` for the virtual disk (binary read/write).
-- **Threading:** `std::thread`, `std::mutex`, `std::condition_variable`, `std::lock_guard`, `std::atomic`.
-- **Time:** `std::chrono` for timestamps and optional delays in demos.
-
-So we get a full “systems programming” toolkit without depending on third-party libraries, which keeps the project portable and easy to build anywhere.
-
-### 1.5 Suitability for Similar Projects
-
-The same reasons apply to other educational or lightweight systems projects, for example:
-
-- **CPU or disk scheduling simulators** — Same need for clear data structures, queues, and algorithms.
-- **Concurrency demos** — Real threads and mutexes are essential.
-- **Simple file systems or allocators** — Binary I/O, byte-level layout, and no GC match C++ well.
-- **State machines (e.g. protocol or process life cycle)** — Enums and structs map directly to states and transitions.
-
-For anything that is “close to the metal” or that teaches OS/architecture concepts, C++ is a natural fit.
+Este documento explica por que C++ foi escolhido para o Mini OS Simulator, quais recursos da linguagem se mostraram mais ?teis, como o uso de threads e concorr?ncia funciona e o que voc? aprende ao desenvolver ou estudar este projeto, tanto sobre conceitos de sistemas operacionais quanto sobre programa??o.
 
 ---
 
-## 2. C++ Features That Actually Help in This Project
+## 1. Por que C++ para este projeto e outros projetos de sistemas operacionais
 
-Below are the language and library features that directly support the simulator’s design and clarity.
+### 1.1 Correspond?ncia direta com os conceitos de sistemas operacionais
 
-### 2.1 `enum class` for State
+Nos cursos de sistemas operacionais, estudamos **processos**, **threads**, **mutexes**, **sem?foros** e **escalonadores**. Em C++, existem recursos correspondentes diretamente na linguagem e em sua biblioteca padr?o:
 
-Process and thread states are represented as a **strongly typed enum**:
+| Conceito de SO | Biblioteca padr?o do C++ | Como ? utilizado no simulador |
+|---|---|---|
+| Thread | `std::thread` | M?dulo 3: threads concorrentes reais para demonstra??es de sincroniza??o |
+| Mutex | `std::mutex` | Prote??o do buffer compartilhado, do sistema de registro de eventos e do estado do RAG |
+| Vari?vel de condi??o | `std::condition_variable` | Sem?ntica de sem?foros e de ?aguardar at? que um recurso esteja dispon?vel? |
+| Opera??es at?micas | `std::atomic<T>` | Contadores de itens do produtor-consumidor sem necessidade de mutexes |
+
+O uso das mesmas primitivas disponibilizadas ou encapsuladas pelos sistemas operacionais reais mant?m o modelo mental consistente: aquilo que voc? simula ? por exemplo, uma ?thread bloqueada em um sem?foro? ? tamb?m acontece de fato no programa.
+
+Uma linguagem sem threads ou mutexes nativos exigiria um modelo mais abstrato, tornando o aprendizado de concorr?ncia menos direto.
+
+### 1.2 Aus?ncia de uma camada de execu??o oculta ou de coletor de lixo
+
+O simulador ? um **execut?vel independente**, sem interpretador ou m?quina virtual. N?o h? coletor de lixo, portanto:
+
+- **Determinismo:** ao executar um algoritmo de escalonamento ou substitui??o de p?ginas, o comportamento pode ser reproduzido, sem pausas causadas por coleta de lixo.
+- **Controle de recursos:** ? poss?vel analisar quando a mem?ria ? alocada e liberada, por exemplo, nos blocos do disco virtual e nas listas de processos. Isso se relaciona diretamente aos temas de gerenciamento de mem?ria e pol?ticas de aloca??o estudados em sistemas operacionais.
+- **Portabilidade:** o mesmo c?digo pode ser compilado em plataformas que disponham de uma ferramenta de compila??o compat?vel com C++17, sem exigir o envio de um ambiente de execu??o adicional.
+
+Em projetos que simulam kernels, escalonadores ou alocadores, essa previsibilidade e esse controle s?o vantagens importantes.
+
+### 1.3 Desempenho onde ele ? relevante
+
+N?o precisamos de velocidade m?xima em um simulador educacional, mas C++ ainda oferece benef?cios:
+
+- **Concorr?ncia (M?dulo 3):** threads reais de `std::thread` podem ser executadas em paralelo em m?quinas com m?ltiplos n?cleos. Assim, ? poss?vel observar o entrela?amento da execu??o e o comportamento temporal sem precisar falsific?-los.
+- **Baixo custo por opera??o:** la?os intensivos, como os do algoritmo do banqueiro, da substitui??o de p?ginas e do escalonamento de disco, executam com pouca sobrecarga, mantendo o programa responsivo mesmo com entradas grandes.
+- **Organiza??o dos dados:** estruturas como `ProcessControlBlock` e `DirEntry` possuem uma organiza??o de dados expl?cita e previs?vel. Isso ? ?til para compreender posteriormente os efeitos de cache ou implementar algo mais pr?ximo de um kernel real.
+
+### 1.4 Biblioteca padr?o abrangente, sem depend?ncias externas
+
+O projeto utiliza **somente a biblioteca padr?o do C++**:
+
+- **Cont?ineres:** `std::vector`, `std::queue`, `std::map`, `std::set` e `std::list` para processos, filas de prontos, quadros de p?gina, FAT, entradas de diret?rio e estruturas de grafos.
+- **Algoritmos:** `std::sort`, `std::min` e `std::max` para pol?ticas de escalonamento e substitui??o.
+- **Entrada e sa?da:** `std::fstream` para leitura e escrita bin?ria no disco virtual.
+- **Threads e sincroniza??o:** `std::thread`, `std::mutex`, `std::condition_variable`, `std::lock_guard` e `std::atomic`.
+- **Tempo:** `std::chrono` para registros de data e hora e atrasos opcionais nas demonstra??es.
+
+Dessa forma, temos um conjunto completo de ferramentas de programa??o de sistemas sem depender de bibliotecas de terceiros, mantendo o projeto port?til e f?cil de compilar em diferentes ambientes.
+
+### 1.5 Adequa??o a projetos semelhantes
+
+Os mesmos motivos se aplicam a outros projetos educacionais ou de sistemas leves, por exemplo:
+
+- **Simuladores de escalonamento de CPU ou disco:** exigem estruturas de dados claras, filas e algoritmos.
+- **Demonstra??es de concorr?ncia:** threads e mutexes reais s?o essenciais.
+- **Sistemas de arquivos simples ou alocadores:** entrada e sa?da bin?ria, organiza??o em bytes e aus?ncia de coletor de lixo combinam bem com C++.
+- **M?quinas de estados**, como as utilizadas em protocolos ou no ciclo de vida de processos: enums e structs representam diretamente os estados e suas transi??es.
+
+Para projetos pr?ximos do hardware ou voltados ao ensino de conceitos de sistemas operacionais e arquitetura, C++ ? uma escolha natural.
+
+---
+
+## 2. Recursos do C++ que realmente ajudam neste projeto
+
+A seguir est?o os recursos da linguagem e da biblioteca que contribuem diretamente para a arquitetura e a clareza do simulador.
+
+### 2.1 `enum class` para representar estados
+
+Os estados de processos e threads s?o representados por uma **enumera??o fortemente tipada**:
 
 ```cpp
-enum class ProcessState { NEW, READY, RUNNING, WAITING, TERMINATED };
+enum class ProcessState {
+    NEW,
+    READY,
+    RUNNING,
+    WAITING,
+    TERMINATED
+};
 ```
 
-- **Type safety:** You cannot accidentally mix with integers or other enums; transitions are explicit (e.g. `ProcessState::READY`).
-- **Scoped names:** No global namespace pollution; the state set is clear and documented in one place.
-- **Switch exhaustiveness:** Compilers can warn if you forget a case in `stateToString()` or in a scheduler.
+- **Seguran?a de tipos:** n?o ? poss?vel misturar acidentalmente esses valores com n?meros inteiros ou outras enumera??es. As transi??es s?o expl?citas, como `ProcessState::READY`.
+- **Nomes delimitados:** evita a polui??o do espa?o de nomes global. O conjunto de estados fica claro e documentado em um ?nico lugar.
+- **Verifica??o de casos:** o compilador pode emitir avisos quando um caso ? esquecido em fun??es como `stateToString()` ou em um escalonador.
 
-This is used everywhere we deal with process/thread state (Module 1, 2, and when logging).
+Esse recurso ? utilizado em todos os pontos que lidam com estados de processos e threads, especialmente nos m?dulos 1 e 2 e nos registros de eventos.
 
-### 2.2 Structs and Value Semantics
+### 2.2 Structs e sem?ntica de valores
 
-Core data are **plain structs** with clear layout:
+Os dados centrais s?o representados por **structs simples**, com uma organiza??o clara:
 
 ```cpp
 struct ProcessControlBlock {
@@ -94,43 +102,44 @@ struct ProcessControlBlock {
 };
 ```
 
-- **Default member initializers** (`= 0`, `= ProcessState::NEW`) avoid uninitialized bugs when creating new processes.
-- **Value semantics:** Schedulers take `std::vector<ProcessControlBlock>` and can copy the vector to run the same workload with different algorithms without shared mutable state. That keeps “compare all algorithms” simple and safe.
-- **Composability:** A PCB contains a `std::vector<ThreadControlBlock>`; the same idea (aggregate data + containers) is used for page tables, FAT, and directory entries.
+- **Inicializadores padr?o de membros:** valores como `= 0` e `= ProcessState::NEW` ajudam a evitar erros causados por vari?veis n?o inicializadas ao criar processos.
+- **Sem?ntica de valores:** os escalonadores recebem um `std::vector<ProcessControlBlock>` e podem copiar o vetor para executar a mesma carga de trabalho com algoritmos diferentes, sem compartilhar estado mut?vel. Isso simplifica e torna mais segura a compara??o entre algoritmos.
+- **Composi??o:** um PCB cont?m um `std::vector<ThreadControlBlock>`. A mesma ideia ? combinar dados e cont?ineres ? ? usada em tabelas de p?ginas, FAT e entradas de diret?rio.
 
-### 2.3 STL Containers and Algorithms
+### 2.3 Cont?ineres e algoritmos da STL
 
-- **`std::vector`:** Processes, threads, page frames, request queues, directory entries. Resizing and indexing are straightforward.
-- **`std::queue`:** Ready queue in Round Robin and MLFQ; request queue in disk scheduling.
-- **`std::map` / `std::set`:** Resource Allocation Graph (processes, resources, assignment/request edges); LRU structures in page replacement.
-- **`std::sort`:** Ordering processes by arrival time (FCFS, RR) or by burst/priority (SJF, Priority).
-- **`std::pair`:** Gantt chart entries `(pid, duration)` and similar ad-hoc pairs.
+- **`std::vector`:** utilizado para processos, threads, quadros de p?gina, filas de requisi??es e entradas de diret?rio. Redimensionar e acessar elementos por ?ndice ? simples.
+- **`std::queue`:** utilizada na fila de prontos do Round Robin e do MLFQ, assim como na fila de requisi??es do escalonamento de disco.
+- **`std::map` / `std::set`:** utilizados no Grafo de Aloca??o de Recursos (RAG), que representa processos, recursos e arestas de atribui??o ou solicita??o, al?m de estruturas usadas na substitui??o de p?ginas LRU.
+- **`std::sort`:** ordena processos pelo tempo de chegada, no FCFS e no Round Robin, ou pelo tempo de execu??o e pela prioridade, no SJF e no escalonamento por prioridade.
+- **`std::pair`:** representa pares de dados, como entradas do gr?fico de Gantt `(pid, duration)` e outras combina??es simples.
 
-Using the standard library keeps the code short and readable and teaches you to rely on well-tested building blocks instead of hand-rolling every list or queue.
+O uso da biblioteca padr?o mant?m o c?digo conciso e leg?vel, al?m de ensinar a utilizar componentes bem testados em vez de implementar manualmente todas as listas e filas.
 
-### 2.4 RAII and `std::lock_guard`
+### 2.4 RAII e `std::lock_guard`
 
-The logger is shared by multiple threads, so every log call must be serialized:
+O sistema de registro de eventos ? compartilhado por v?rias threads, portanto cada chamada de registro precisa ser sincronizada:
 
 ```cpp
 void log(const std::string& tag, const std::string& msg) {
     std::lock_guard<std::mutex> lk(mtx_);
-    // ... format and print ...
+    // ... formatar e imprimir ...
 }
 ```
 
-- **RAII:** The mutex is released automatically when `lk` goes out of scope, even on return or exception. No risk of forgetting to unlock.
-- **`std::lock_guard`** is the standard way to “lock for the duration of this block.” The same pattern is used in the simulated mutex/semaphore wrappers so that every acquire has a matching release.
+- **RAII:** o mutex ? liberado automaticamente quando `lk` sai do escopo, inclusive em casos de retorno antecipado ou exce??o. Isso evita o risco de esquecer de desbloque?-lo.
+- **`std::lock_guard`:** ? a forma padr?o de ?manter o bloqueio durante a execu??o deste bloco?. O mesmo padr?o ? utilizado nos wrappers de mutexes e sem?foros simulados, garantindo que cada aquisi??o tenha uma libera??o correspondente.
 
-This directly supports the “synchronization primitives” theme of the project and models how real OS code uses critical sections.
+Esse recurso d? suporte direto ao tema de primitivas de sincroniza??o do projeto e representa como programas de sistemas reais utilizam se??es cr?ticas.
 
-### 2.5 Lambdas and Capture
+### 2.5 Lambdas e captura de vari?veis
 
-In Module 3, each producer and consumer is a lambda passed to `std::thread`:
+No M?dulo 3, cada produtor e consumidor ? implementado como uma lambda passada para `std::thread`:
 
 ```cpp
 auto producer = [&](int id) {
     std::string name = "Producer-" + std::to_string(id);
+
     while (true) {
         int item = produced.fetch_add(1);
         // ...
@@ -140,32 +149,34 @@ auto producer = [&](int id) {
         // ...
     }
 };
+
 std::thread t(producer, i + 1);
 ```
 
-- **Closure by reference `[&]`:** The lambda sees the shared `buffer`, `bufMtx`, `empty`, `full`, and `produced`/`consumed`. That keeps the demo code compact.
-- **By-value arguments `(int id)`:** Each thread gets its own id and builds its own `name` string, avoiding shared mutable string state.
-- **Same pattern** is used for readers, writers, philosophers, and the barber thread. You get one clear template for “run this function in a thread with this id.”
+- **Captura por refer?ncia com `[&]`:** a lambda acessa o `buffer`, `bufMtx`, `empty`, `full` e os contadores `produced` e `consumed` compartilhados. Isso mant?m o c?digo da demonstra??o compacto.
+- **Argumentos por valor, como `(int id)`:** cada thread recebe seu pr?prio identificador e cria sua pr?pria string `name`, evitando o compartilhamento de estado mut?vel para esse dado.
+- **Mesmo padr?o em outros cen?rios:** a mesma abordagem ? usada para leitores, escritores, fil?sofos e a thread do barbeiro. Assim, existe um modelo claro para ?executar esta fun??o em uma thread com este identificador?.
 
-### 2.6 `std::atomic` for Lock-Free Counters
+### 2.6 `std::atomic` para contadores sem bloqueio por mutex
 
-Producer-Consumer uses atomics for the next item index and consumed count:
+O problema do produtor-consumidor utiliza opera??es at?micas para o ?ndice do pr?ximo item e a quantidade de itens consumidos:
 
 ```cpp
 std::atomic<int> produced{0};
 std::atomic<int> consumed{0};
+
 // ...
 int item = produced.fetch_add(1);
 int c = consumed.fetch_add(1);
 ```
 
-- **No mutex on the counter:** Multiple threads can advance the counter without blocking each other, reducing contention.
-- **Clear semantics:** `fetch_add` is exactly “read-modify-write atomically,” which matches the idea of a shared counter in concurrency theory.
-- **Teaches a simple lock-free pattern** before diving into more complex lock-free structures.
+- **Sem mutex para os contadores:** v?rias threads podem atualizar os contadores sem precisar bloquear umas ?s outras por meio de um mutex.
+- **Sem?ntica clara:** `fetch_add` realiza uma opera??o at?mica de leitura, modifica??o e escrita, correspondendo ao conceito de contador compartilhado na teoria de concorr?ncia.
+- **Introdu??o a padr?es sem bloqueio:** ensina uma t?cnica simples de programa??o *lock-free* antes de abordar estruturas mais complexas dessa categoria.
 
-### 2.7 Binary I/O and Layout Control
+### 2.7 Entrada e sa?da bin?ria e controle da organiza??o dos dados
 
-The virtual disk (Module 7) uses `std::fstream` with fixed block size and explicit offsets:
+O disco virtual, no M?dulo 7, utiliza `std::fstream`, com tamanho fixo de bloco e deslocamentos expl?citos:
 
 ```cpp
 void readBlock(int blockNum, void* buffer) {
@@ -175,14 +186,14 @@ void readBlock(int blockNum, void* buffer) {
 }
 ```
 
-- **No hidden encoding:** Binary mode and `read`/`write` give precise control over bytes. Superblock, FAT, and directory entries are written with `memcpy` so layout matches the on-disk format.
-- **Portability:** We rely on fixed-size types and explicit layout; no assumption about host endianness beyond what we document. This is how real file systems and OS metadata are often implemented.
+- **Sem codifica??o oculta:** o modo bin?rio e as opera??es `read` e `write` oferecem controle preciso sobre os bytes. O superbloco, a FAT e as entradas de diret?rio s?o gravados com `memcpy` para corresponder ao formato armazenado em disco.
+- **Portabilidade:** o projeto utiliza tipos de tamanho fixo e uma organiza??o expl?cita dos dados, sem pressupor uma determinada ordem de bytes (*endianness*) da m?quina al?m daquilo que estiver documentado.
 
-So C++ here teaches “we control every byte” without leaving the standard library.
+Assim, o C++ ensina como controlar cada byte sem sair da biblioteca padr?o.
 
-### 2.8 Singleton for Global Logger
+### 2.8 Singleton para o sistema global de registros
 
-The logger is a **thread-safe singleton**:
+O sistema de registro de eventos ? um **singleton seguro para uso concorrente**:
 
 ```cpp
 static Logger& instance() {
@@ -191,102 +202,104 @@ static Logger& instance() {
 }
 ```
 
-- **Single instance:** Any module can call `Logger::instance().log(...)` without passing a logger reference. The static local is initialized once (C++11 guarantees).
-- **Encapsulation:** Construction and internal mutex are private; the rest of the code only uses the public interface. This is a common pattern in C++ for global services.
+- **Inst?ncia ?nica:** qualquer m?dulo pode chamar `Logger::instance().log(...)` sem precisar receber uma refer?ncia ao logger. A inicializa??o da vari?vel est?tica local ocorre uma ?nica vez, com garantia da linguagem a partir do C++11.
+- **Encapsulamento:** o construtor e o mutex interno s?o privados. O restante do c?digo utiliza somente a interface p?blica. Esse ? um padr?o comum em C++ para servi?os globais.
 
-### 2.9 Header-Only or Small Translation Units
+### 2.9 Cabe?alhos (*headers*) ou unidades de tradu??o pequenas
 
-Much of the logic lives in **headers** (e.g. `scheduler.h`, `page_replacement.h`, `disk_scheduler.h`) as inline or template-heavy code. Benefits:
+Grande parte da l?gica est? nos **arquivos de cabe?alho**, como `scheduler.h`, `page_replacement.h` e `disk_scheduler.h`, por meio de c?digo *inline* ou com uso intensivo de templates.
 
-- **Simple build:** Few .cpp files, so the project compiles quickly and dependencies are obvious.
-- **Inlining:** Small helpers (e.g. `stateToString`, metric computation) can be inlined, which is fine for a simulator where clarity matters more than compilation time.
-- **Easier refactoring:** Moving a function between files is straightforward; you are not fighting a large number of translation units.
+Benef?cios:
 
-For a medium-sized teaching project, this keeps the structure understandable.
+- **Compila??o simples:** existem poucos arquivos `.cpp`, o que pode acelerar a compila??o e facilitar a identifica??o das depend?ncias.
+- **Inlining:** pequenas fun??es auxiliares, como `stateToString` e as de c?lculo de m?tricas, podem ser expandidas durante a compila??o. Isso ? adequado para um simulador no qual a clareza importa mais do que o tempo de compila??o.
+- **Refatora??o mais f?cil:** mover uma fun??o entre arquivos ? relativamente simples, sem precisar lidar com um n?mero muito grande de unidades de tradu??o.
 
----
-
-## 3. Thread Usage and Concurrency
-
-### 3.1 Where Threads Are Used
-
-**Module 3 (Synchronization Playground)** is the only part that creates multiple **real** OS threads:
-
-- **Producer-Consumer:** Several producer threads and several consumer threads share a buffer, a mutex, and two semaphores (empty/full).
-- **Readers-Writers:** Reader and writer threads share a “data” variable and use a shared mutex plus a “reader count” mutex and a single “rw” semaphore.
-- **Dining Philosophers:** One thread per philosopher; each thread repeatedly thinks, acquires two fork semaphores (in a fixed order to avoid deadlock), eats, then releases them.
-- **Sleeping Barber:** One barber thread and multiple customer threads; customers wait on a semaphore and a mutex for the waiting room.
-
-In all cases we use:
-
-- `std::thread` to run the logic.
-- `std::mutex` (sometimes wrapped in our `SimMutex` for logging) to protect shared data.
-- `std::condition_variable` (inside `SimSemaphore`) to block until a resource is available.
-- `std::atomic` where we only need a shared counter.
-
-### 3.2 What This Teaches About Concurrency
-
-- **Critical sections:** Only one thread at a time updates the buffer (or the “data” in Readers-Writers). The mutex defines the critical section; the logs show “acquired”/“released” so you see when threads serialize.
-- **Blocking vs busy-wait:** Semaphores use `condition_variable::wait()` so a thread blocks in the kernel instead of spinning. The logs show “waiting on Empty” / “passed Empty,” which matches “blocked” vs “running.”
-- **Deadlock avoidance:** In Dining Philosophers, the order of locking (e.g. “smaller fork id first” or “last philosopher picks in reverse order”) is explicit so that no circular wait can form. You can compare with a broken order to see deadlock.
-- **Starvation and fairness:** With many readers and writers, or many philosophers, you can observe that some threads may run less often; the timestamped log helps discuss fairness and scheduling.
-- **Real parallelism:** On a multi-core machine, producer and consumer threads really run in parallel; interleaving is non-deterministic and varies from run to run, which is exactly what you want when teaching concurrency.
-
-### 3.3 Thread-Safe Logger
-
-The logger is used from multiple threads at once, so every `log(...)` call is protected by a mutex. That way:
-
-- Lines do not interleave in the middle of a message.
-- You see a single, consistent timeline of events (with timestamps) when analyzing a run.
-
-So the project also demonstrates **how to share a single output stream safely** among threads, a recurring need in concurrent programs.
+Em um projeto educacional de porte m?dio, essa abordagem ajuda a manter a estrutura compreens?vel.
 
 ---
 
-## 4. What Else the Project Teaches
+## 3. Uso de threads e concorr?ncia
 
-Beyond “why C++” and “how we use threads,” the simulator is a vehicle for learning the following.
+### 3.1 Onde as threads s?o utilizadas
 
-### 4.1 Operating Systems Concepts
+O **M?dulo 3 ? Ambiente de Experimenta??o de Sincroniza??o** ? a ?nica parte que cria m?ltiplas **threads reais do sistema operacional**:
 
-- **Process and thread:** PCB/TCB, states (NEW, READY, RUNNING, WAITING, TERMINATED), and transitions; difference between a process and a thread (shared address space, separate stacks).
-- **Scheduling:** FCFS, SJF, Round Robin, Priority, MLFQ; preemptive vs non-preemptive; metrics (waiting, turnaround, response, utilization, throughput); Gantt charts.
-- **Synchronization:** Mutex, semaphore, condition variable; classic problems (Producer-Consumer, Readers-Writers, Dining Philosophers, Sleeping Barber); race conditions and critical sections.
-- **Deadlock:** Resource Allocation Graph; cycle detection; Banker’s algorithm; safe/unsafe state; safe sequence.
-- **Memory management:** Fixed vs variable partitioning; first/best/worst fit; internal and external fragmentation; compaction.
-- **Virtual memory:** Logical vs physical address; page table; page fault; replacement policies (FIFO, LRU, Optimal, Clock); frame allocation.
-- **File system:** Block device abstraction; superblock; FAT; directory entries; create/read/write/delete and directory operations.
-- **I/O:** Request queue; disk scheduling (FCFS, SSTF, SCAN, C-SCAN); seek time and total head movement.
+- **Produtor-consumidor:** v?rias threads produtoras e consumidoras compartilham um buffer, um mutex e dois sem?foros (`empty` e `full`).
+- **Leitores-escritores:** threads leitoras e escritoras compartilham uma vari?vel que representa os dados e utilizam um mutex compartilhado, outro mutex para a contagem de leitores e um sem?foro de leitura e escrita (`rw`).
+- **Jantar dos fil?sofos:** cada fil?sofo possui uma thread que pensa repetidamente, adquire os sem?foros dos dois garfos em uma ordem fixa para evitar deadlock, come e depois libera os recursos.
+- **Barbeiro dorminhoco:** uma thread representa o barbeiro e v?rias outras representam clientes. Os clientes aguardam utilizando um sem?foro e um mutex que protegem a sala de espera.
 
-### 4.2 Algorithms and Data Structures
+Em todos os casos, s?o utilizados:
 
-- **Graphs:** RAG as a directed graph; DFS for cycle detection; adjacency representation (e.g. map from process to set of requested resources, and resource to holder).
-- **Queues:** Ready queue (FCFS, RR, MLFQ), request queue (disk), and buffer (Producer-Consumer).
-- **Tables and matrices:** Page table (page → frame), Allocation/Max/Need/Available in Banker’s, FAT (block → next block or EOF).
-- **Sorting and selection:** Sort by arrival/burst/priority; “smallest burst” or “highest priority” selection in schedulers; “farthest use” in Optimal page replacement.
-- **Simulation loops:** Time-step or event-step loops (e.g. “at each time unit, pick a process, run it, update state”) that mirror how discrete-event simulators work.
+- `std::thread` para executar a l?gica em threads.
+- `std::mutex`, ?s vezes encapsulado em `SimMutex` para permitir registros de eventos, para proteger dados compartilhados.
+- `std::condition_variable`, dentro de `SimSemaphore`, para bloquear a execu??o at? que um recurso esteja dispon?vel.
+- `std::atomic` quando ? necess?rio compartilhar apenas um contador.
 
-### 4.3 Software Design and C++ Practice
+### 3.2 O que isso ensina sobre concorr?ncia
 
-- **Modular structure:** One area per concern (process, scheduler, sync, deadlock, memory, vmem, filesystem, io); shared types in `common/`; clear include boundaries.
-- **Interfaces by convention:** Schedulers all take a vector of PCBs and produce a result (e.g. Gantt + metrics); page replacement functions take reference string + frame count and return a result struct. No need for a formal base class here, but the pattern is clear.
-- **Reuse:** Same `ProcessControlBlock` in Module 1 and 2; same display/logger across modules; same “compare all” idea in scheduling, page replacement, and disk scheduling.
-- **Const correctness:** Const methods and const references where data is not modified (e.g. in RAG display and cycle detection).
-- **Resource management:** RAII for mutexes; file streams opened and closed in a clear scope; no raw `new`/`delete` for core logic—containers and value types handle memory.
+- **Se??es cr?ticas:** somente uma thread por vez pode atualizar o buffer ou os dados compartilhados no problema dos leitores-escritores. O mutex define a se??o cr?tica, e os registros mostram quando os bloqueios s?o adquiridos e liberados, permitindo observar a serializa??o das opera??es.
+- **Bloqueio versus espera ativa:** os sem?foros utilizam `condition_variable::wait()`, fazendo com que a thread aguarde em vez de executar continuamente um la?o de espera. Os registros mostram mensagens como ?aguardando Empty? e ?passou por Empty?, correspondentes aos estados de bloqueio e execu??o.
+- **Preven??o de deadlock:** no jantar dos fil?sofos, a ordem de aquisi??o dos bloqueios ? por exemplo, adquirir primeiro o garfo de menor identificador ou fazer o ?ltimo fil?sofo inverter a ordem ? ? expl?cita. Isso impede a forma??o de uma espera circular. ? poss?vel comparar essa estrat?gia com uma implementa??o incorreta para compreender como o deadlock pode surgir.
+- **Inani??o e justi?a:** com muitos leitores e escritores ou muitos fil?sofos, ? poss?vel observar que algumas threads podem executar com menor frequ?ncia. Os registros com data e hora ajudam a discutir justi?a (*fairness*) e escalonamento.
+- **Paralelismo real:** em m?quinas com m?ltiplos n?cleos, as threads produtoras e consumidoras podem executar realmente em paralelo. O entrela?amento das opera??es n?o ? determin?stico e varia entre execu??es, exatamente como se espera ao estudar concorr?ncia.
 
----
+### 3.3 Sistema de registros seguro para uso concorrente
 
-## 5. Summary Table
+O logger ? utilizado simultaneamente por v?rias threads, portanto cada chamada `log(...)` ? protegida por um mutex. Isso garante que:
 
-| Area | What C++ provides | What the project teaches |
-|------|-------------------|---------------------------|
-| **Concurrency** | `std::thread`, `std::mutex`, `std::condition_variable`, `std::atomic` | Real parallelism, critical sections, blocking, deadlock avoidance |
-| **Data modeling** | Structs, `enum class`, STL containers | PCB/TCB, state machines, queues, graphs, tables |
-| **Algorithms** | `std::sort`, loops, conditionals | Scheduling, page replacement, disk scheduling, Banker’s, cycle detection |
-| **I/O** | `std::fstream`, binary mode, `memcpy` | Virtual disk layout, blocks, FAT, directory entries |
-| **Safety** | RAII, `lock_guard`, type-safe enums | Safe locking, no leaks, clear state transitions |
-| **Design** | Headers, small TUs, singletons | Modular OS simulator, reusable components, single executable |
+- As linhas n?o sejam misturadas no meio de uma mensagem.
+- Seja poss?vel observar uma linha do tempo ?nica e consistente dos eventos, com registros de data e hora, ao analisar uma execu??o.
+
+Dessa forma, o projeto tamb?m demonstra **como compartilhar com seguran?a um ?nico fluxo de sa?da entre v?rias threads**, uma necessidade recorrente em programas concorrentes.
 
 ---
 
-This document is a companion to the main [README.md](README.md). Together they explain both *what* the Mini OS Simulator does and *why* it is implemented in C++ and what you learn from it—conceptually and practically.
+## 4. O que mais o projeto ensina
+
+Al?m de explicar por que C++ foi escolhido e como as threads s?o utilizadas, o simulador serve como ferramenta de aprendizado para os seguintes t?picos.
+
+### 4.1 Conceitos de sistemas operacionais
+
+- **Processos e threads:** PCB/TCB, estados (`NEW`, `READY`, `RUNNING`, `WAITING`, `TERMINATED`) e transi??es; diferen?as entre processos e threads, como o compartilhamento do espa?o de endere?amento e a exist?ncia de pilhas separadas para cada thread.
+- **Escalonamento:** FCFS, SJF, Round Robin, Prioridade e MLFQ; escalonamento preemptivo e n?o preemptivo; m?tricas de espera, tempo de retorno (*turnaround*), resposta, utiliza??o e vaz?o; gr?ficos de Gantt.
+- **Sincroniza??o:** mutexes, sem?foros e vari?veis de condi??o; problemas cl?ssicos do produtor-consumidor, leitores-escritores, jantar dos fil?sofos e barbeiro dorminhoco; condi??es de corrida e se??es cr?ticas.
+- **Deadlock:** Grafo de Aloca??o de Recursos; detec??o de ciclos; algoritmo do banqueiro; estados seguros e inseguros; sequ?ncia segura.
+- **Gerenciamento de mem?ria:** particionamento fixo e vari?vel; First Fit, Best Fit e Worst Fit; fragmenta??o interna e externa; compacta??o.
+- **Mem?ria virtual:** endere?os l?gicos e f?sicos; tabela de p?ginas; falha de p?gina; pol?ticas de substitui??o FIFO, LRU, ?timo e Clock; aloca??o de quadros.
+- **Sistema de arquivos:** abstra??o de dispositivo de blocos; superbloco; FAT; entradas de diret?rio; cria??o, leitura, escrita, exclus?o e opera??es de diret?rio.
+- **Entrada e sa?da (E/S):** fila de requisi??es; escalonamento de disco com FCFS, SSTF, SCAN e C-SCAN; tempo de busca e deslocamento total da cabe?a de leitura e escrita.
+
+### 4.2 Algoritmos e estruturas de dados
+
+- **Grafos:** o RAG como grafo direcionado; busca em profundidade (DFS) para detec??o de ciclos; representa??o por adjac?ncia, como um mapa de processos para conjuntos de recursos solicitados e de recursos para seus processos detentores.
+- **Filas:** fila de prontos (FCFS, RR e MLFQ), fila de requisi??es de disco e buffer do produtor-consumidor.
+- **Tabelas e matrizes:** tabela de p?ginas (p?gina ? quadro); matrizes Allocation, Max, Need e Available no algoritmo do banqueiro; FAT (bloco ? pr?ximo bloco ou fim de arquivo).
+- **Ordena??o e sele??o:** ordena??o por chegada, tempo de execu??o ou prioridade; sele??o do menor tempo de execu??o ou da maior prioridade nos escalonadores; escolha da p?gina cujo pr?ximo uso est? mais distante na substitui??o ?tima.
+- **La?os de simula??o:** la?os baseados em unidades de tempo ou eventos, como ?em cada unidade de tempo, selecionar um processo, execut?-lo e atualizar seu estado?, que reproduzem a l?gica de simuladores de eventos discretos.
+
+### 4.3 Projeto de software e pr?ticas de C++
+
+- **Estrutura modular:** uma ?rea para cada responsabilidade ? processos, escalonamento, sincroniza??o, deadlock, mem?ria, mem?ria virtual, sistema de arquivos e E/S ?, com tipos compartilhados em `common/` e limites claros entre os arquivos inclu?dos.
+- **Interfaces por conven??o:** todos os escalonadores recebem um vetor de PCBs e produzem um resultado, como gr?fico de Gantt e m?tricas. As fun??es de substitui??o de p?ginas recebem uma sequ?ncia de refer?ncias e a quantidade de quadros, retornando uma estrutura de resultado. N?o ? necess?rio criar uma classe-base formal para deixar esse padr?o claro.
+- **Reutiliza??o:** o mesmo `ProcessControlBlock` ? usado nos m?dulos 1 e 2; a exibi??o e o logger s?o compartilhados entre os m?dulos; a ideia de comparar todos os algoritmos ? aplicada ao escalonamento, ? substitui??o de p?ginas e ao escalonamento de disco.
+- **Corre??o de `const`:** m?todos `const` e refer?ncias constantes s?o utilizados quando os dados n?o precisam ser modificados, por exemplo, na exibi??o do RAG e na detec??o de ciclos.
+- **Gerenciamento de recursos:** RAII para mutexes; fluxos de arquivos abertos e fechados em escopos bem definidos; aus?ncia de uso de `new` e `delete` diretamente na l?gica principal, pois cont?ineres e tipos por valor gerenciam a mem?ria.
+
+---
+
+## 5. Tabela-resumo
+
+| ?rea | O que C++ oferece | O que o projeto ensina |
+|---|---|---|
+| **Concorr?ncia** | `std::thread`, `std::mutex`, `std::condition_variable`, `std::atomic` | Paralelismo real, se??es cr?ticas, bloqueio e preven??o de deadlock |
+| **Modelagem de dados** | Structs, `enum class` e cont?ineres da STL | PCB/TCB, m?quinas de estados, filas, grafos e tabelas |
+| **Algoritmos** | `std::sort`, la?os e condicionais | Escalonamento, substitui??o de p?ginas, escalonamento de disco, algoritmo do banqueiro e detec??o de ciclos |
+| **Entrada e sa?da** | `std::fstream`, modo bin?rio e `memcpy` | Organiza??o do disco virtual, blocos, FAT e entradas de diret?rio |
+| **Seguran?a** | RAII, `lock_guard` e enumera??es tipadas | Bloqueio seguro, preven??o de vazamentos e transi??es claras de estado |
+| **Projeto de software** | Cabe?alhos, unidades de tradu??o pequenas e singleton | Simulador modular de SO, componentes reutiliz?veis e execut?vel ?nico |
+
+---
+
+Este documento complementa o arquivo principal [README.md](README.md). Juntos, eles explicam tanto **o que** o Mini OS Simulator faz quanto **por que** ele foi implementado em C++ e o que o projeto ensina, tanto do ponto de vista conceitual quanto pr?tico.
